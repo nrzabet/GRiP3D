@@ -3,6 +3,7 @@ package objects;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -110,7 +111,12 @@ public class InputParameters  implements Serializable{
 	public Parameter<Boolean> CHECK_OCCUPANCY_ON_REBINDING;
 	public Parameter<Boolean> IS_BIASED_RANDOM_WALK;
 	public Parameter<Boolean> IS_TWO_STATE_RANDOM_WALK;
-
+	
+	//HIC interactions 
+	public Parameter<String> HIC_CONTACT_MATRIX_FILE;
+	public Parameter<Integer> BIN_WIDTH;
+	public Parameter<Double> PROPORTION_TIME; //interaction matrix simulation time
+	public Parameter<Double> PK_MICROENV;
 	public InputParameters(String parametersFile){
 		BufferedReader br ;
 		InputStream in;
@@ -255,12 +261,20 @@ public class InputParameters  implements Serializable{
 		this.CHECK_OCCUPANCY_ON_REBINDING = new Parameter<Boolean>();
 		this.IS_BIASED_RANDOM_WALK = new Parameter<Boolean>();
 		this.IS_TWO_STATE_RANDOM_WALK = new Parameter<Boolean>();
+		
+		//3D_HOP PARAMETERS
+		this.HIC_CONTACT_MATRIX_FILE = new Parameter<String>();
+		this.BIN_WIDTH = new Parameter<Integer>();
+		this.PROPORTION_TIME= new Parameter<Double>();
+		this.PK_MICROENV = new Parameter<Double>();
 	}
 
 	/**
 	 * sets the default values for the parameters provided from outside 
+	 * @throws FileNotFoundException 
+	 * @throws NumberFormatException 
 	 */
-	private void loadInitialInputParameters(BufferedReader br){
+	private void loadInitialInputParameters(BufferedReader br) throws NumberFormatException, FileNotFoundException{
 		
 		ArrayList<ArrayList<String>> params = getParamArray(br, Constants.PARAMS_FILE_COMMENT_CHAR, Constants.PARAMS_FILE_LINE_ENDING, Constants.PARAMS_FILE_ASSIGNMENT_CHAR);
 		String name = "", label = "", description = "", category = "", value = "";
@@ -297,8 +311,10 @@ public class InputParameters  implements Serializable{
 	/**
 	 * loads parameter values from a file
 	 * @param filename
+	 * @throws FileNotFoundException 
+	 * @throws NumberFormatException 
 	 */
-	public void loadParameters(BufferedReader br){
+	public void loadParameters(BufferedReader br) throws NumberFormatException, FileNotFoundException{
 		
 		ArrayList<ArrayList<String>> params = getParamArray(br, Constants.PARAMS_FILE_COMMENT_CHAR, Constants.PARAMS_FILE_LINE_ENDING, Constants.PARAMS_FILE_ASSIGNMENT_CHAR);
 		String name = "", value = "";
@@ -557,7 +573,16 @@ public class InputParameters  implements Serializable{
 		      out.write("#"+this.IS_TWO_STATE_RANDOM_WALK.description+"\n");
 		      out.write("IS_TWO_STATE_RANDOM_WALK = "+this.IS_TWO_STATE_RANDOM_WALK.value+";\n\n");   
 		      
-		      
+		     //3D_HOP PARAMETERS
+		      out.write("#"+this.HIC_CONTACT_MATRIX_FILE.description+"\n");
+		      out.write("HIC_CONTACT_MATRIX_FILE = "+this.HIC_CONTACT_MATRIX_FILE.value+";\n\n");
+		      out.write("#"+this.BIN_WIDTH.description+"\n");
+		      out.write("BIN_WIDTH= "+this.BIN_WIDTH.value+";\n\n");
+		      out.write("#"+this.PK_MICROENV.description+"\n");
+		      out.write("PK_MICROENV = "+this.PK_MICROENV.value+";\n\n");
+		      out.write("#"+this.PROPORTION_TIME.description+"\n");
+		      out.write("PROPORTION_TIME = "+this.PROPORTION_TIME.value+";\n\n");
+		     
 		      out.close();
 
 		    } catch (IOException e) {
@@ -623,8 +648,10 @@ public class InputParameters  implements Serializable{
 	 * @param category
 	 * @param value
 	 * @return
+	 * @throws FileNotFoundException 
+	 * @throws NumberFormatException 
 	 */
-	public boolean setParameter(String name, String label, String description, String category,String value){
+	public boolean setParameter(String name, String label, String description, String category,String value) throws NumberFormatException, FileNotFoundException{
 		boolean found = false;
 		//SIMULATION PARAMATERS
 		if(name.equals("STOP_TIME")){
@@ -1016,6 +1043,30 @@ public class InputParameters  implements Serializable{
 				if(!description.isEmpty()){this.IS_TWO_STATE_RANDOM_WALK.description = description;}
 				if(!category.isEmpty()){this.IS_TWO_STATE_RANDOM_WALK.category = category;}
 				found = true;		
+			} else if(name.equals("HIC_CONTACT_MATRIX_FILE")){
+				this.HIC_CONTACT_MATRIX_FILE.value =value;
+				if(!label.isEmpty()){this.HIC_CONTACT_MATRIX_FILE.label = label;}
+				if(!description.isEmpty()){this.HIC_CONTACT_MATRIX_FILE.description = description;}
+				if(!category.isEmpty()){this.HIC_CONTACT_MATRIX_FILE.category = category;}
+				found = true;
+			} else if(name.equals("BIN_WIDTH")){
+				this.BIN_WIDTH.value = Integer.parseInt(value);
+				if(!label.isEmpty()){this.BIN_WIDTH.label = label;}
+				if(!description.isEmpty()){this.BIN_WIDTH.description = description;}
+				if(!category.isEmpty()){this.BIN_WIDTH.category = category;}
+				found = true;
+			} else if(name.equals("PROPORTION_TIME")){
+				this.PROPORTION_TIME.value = Utils.parseDouble(value, Constants.NONE);
+				if(!label.isEmpty()){this.PROPORTION_TIME.label = label;}
+				if(!description.isEmpty()){this.PROPORTION_TIME.description = description;}
+				if(!category.isEmpty()){this.PROPORTION_TIME.category = category;}
+				found = true;
+			} else if(name.equals("PK_MICROENV")){
+				this.PK_MICROENV.value = Utils.parseDouble(value, Constants.NONE);
+				if(!label.isEmpty()){this.PK_MICROENV.label = label;}
+				if(!description.isEmpty()){this.PK_MICROENV.description = description;}
+				if(!category.isEmpty()){this.PK_MICROENV.category = category;}
+				found = true;
 			} else{
 			System.out.println(name+" not recognised.");
 		}		

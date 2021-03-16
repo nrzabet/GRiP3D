@@ -19,7 +19,7 @@ public class ProteinEvent extends Event {
 	public boolean isTF;
 	public int secondProteinID;	
 	public boolean isHoppingEvent;
-
+	
 	/**
 	 * class constructor
 	 * @param time the time of the event
@@ -34,6 +34,7 @@ public class ProteinEvent extends Event {
 		this.isTF = isTF;
 		secondProteinID = Constants.NONE;
 		this.isHoppingEvent = isHoppingEvent;
+		
 	}
 	
 	/**
@@ -52,6 +53,7 @@ public class ProteinEvent extends Event {
 		this.isTF = isTF;
 		this.secondProteinID = secondProteinID;
 		this.isHoppingEvent = isHoppingEvent;
+		
 	} 
 	
 	/**

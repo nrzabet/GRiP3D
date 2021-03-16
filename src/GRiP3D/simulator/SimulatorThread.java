@@ -24,7 +24,7 @@ public class SimulatorThread extends Thread{
 	private String currentFile;
 	private int ensambleSteps;
 	
-	public SimulatorThread(String currentFile, SimulatorGUI gui, int steps){
+	public SimulatorThread(String currentFile, SimulatorGUI gui, int steps) throws Exception{
 		super();
 		this.currentFile = currentFile;
 		this.gui = gui;
@@ -36,8 +36,9 @@ public class SimulatorThread extends Thread{
 	
 	/**
 	 * initialise internal parameters
+	 * @throws Exception 
 	 */
-	private void initialiseSystem(){
+	private void initialiseSystem() throws Exception{
 		initialised = false;
 		
 		try {
@@ -85,8 +86,9 @@ public class SimulatorThread extends Thread{
 	
 	/**
 	 * restarts the current simulation
+	 * @throws Exception 
 	 */
-	public void restartSimulation(){
+	public void restartSimulation() throws Exception{
 		isPaused = false;
 		this.initialiseSystem();
 		this.start();

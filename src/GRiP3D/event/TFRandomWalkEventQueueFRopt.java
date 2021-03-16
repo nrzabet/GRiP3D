@@ -174,9 +174,19 @@ public class TFRandomWalkEventQueueFRopt  extends TFRandomWalkEventQueue{
 
 			int speciesID = n.dbp[moleculeID].speciesID;
 			boolean isHoppingEvent=false;
-		
+			boolean hopping3D = false;
 			
-			
+			int currentBin=0;
+			ArrayList<Integer> interactingBins=new ArrayList<Integer>();
+			int randomBinID=0;
+			if(position>0) {
+			currentBin= n.HIC_CONTACT_MATRIX.getCurrentBinIndex(position + (int) n.dna.subsequence.start, n.dna.subsequence.chromosome);
+			interactingBins.addAll(n.HIC_CONTACT_MATRIX.getInteractingBins(currentBin));
+			//draw a random bin from the collection of interacting bin		
+			if(interactingBins.size()>0) {
+			// if this is reattaches to a different bin then newPosition = n.HIC_CONTACT_MATRIX.radomBinPosition(n.randomGenerator, randomBinID);
+			randomBinID = n.randomGenerator.nextInt(interactingBins.size());}
+			}
 			//compute the time the TF stays stucked 
 			double nextTime = Gillespie.computeNextReactionTime( n.dbp[moleculeID].getMoveRate(), n.randomGenerator);
 
@@ -195,7 +205,7 @@ public class TFRandomWalkEventQueueFRopt  extends TFRandomWalkEventQueue{
 					newPosition = 0;
 				} else if( newPosition >= n.dna.strand.length-n.dbp[moleculeID].size){
 					newPosition =  n.dna.strand.length-n.dbp[moleculeID].size;
-				} else if (Math.abs(newPosition-position) > n.TFspecies[speciesID].uncorrelatedDisplacementSize){
+				} else if (Math.abs(newPosition-position) > n.TFspecies[speciesID].uncorrelatedDisplacementSize&& hopping3D==false){
 					//the hop size is to big and the hop becomes a jump 
 					nextAction = Constants.EVENT_TF_RANDOM_WALK_JUMP;
 					newPosition = Constants.NONE;
@@ -212,7 +222,23 @@ public class TFRandomWalkEventQueueFRopt  extends TFRandomWalkEventQueue{
 			} else if(randomNumber <  n.dna.TFSlideRightNo[speciesID][position][direction]){
 				nextAction = Constants.EVENT_TF_RANDOM_WALK_SLIDE_RIGHT;
 				newPosition= position+n.TFspecies[speciesID].stepRightSize;
-			}			
+			}
+			if(nextAction==Constants.EVENT_TF_RANDOM_WALK_JUMP) {
+				//new random number
+				double randomNo=n.randomGenerator.nextDouble();
+				double pkValue=n.TFspecies[speciesID].PK_MICROENV;
+				if(pkValue==-1) {
+					pkValue= n.ip.PK_MICROENV.value;
+				}
+				if(randomNo <= pkValue) {
+					// nextAction = Constants.EVENT_TF_3D_HOP
+						if(currentBin!=randomBinID) { 
+							hopping3D=true;
+							newPosition = n.HIC_CONTACT_MATRIX.radomBinPosition(n.randomGenerator, randomBinID);
+							nextAction = Constants.EVENT_TF_3D_HOP;
+						} 
+				}
+			}		
 			
 			ProteinEvent e = new ProteinEvent(time+nextTime, moleculeID, newPosition, true, nextAction, isHoppingEvent);
 			n.dbp[moleculeID].pe = e;

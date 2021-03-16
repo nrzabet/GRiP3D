@@ -28,9 +28,9 @@ public class SimulatorCLI {
 	
 	/**
 	 * @param args
-	 * @throws FileNotFoundException 
+	 * @throws Exception 
 	 */
-	public static void main(String[] args) throws FileNotFoundException {
+	public static void main(String[] args) throws Exception {
 
 		boolean stopAfterBackup = false;
 		boolean wasSaved = false;
@@ -46,13 +46,13 @@ public class SimulatorCLI {
 		if(args.length>0){
 			parametersFilename = args[0];
 		} 
-	
+		
 		if(args.length>1){
 			steps = Utils.parseInteger(args[1],1);
 		}
 		
 		backupAfter = Constants.MIN_INTERMEDIARY_STATE;
-		System.out.println("1");
+		
 		if(args.length>2){
 			backupAfter = Utils.parseDouble(args[2], backupAfter);
 		}
@@ -61,7 +61,7 @@ public class SimulatorCLI {
 			stopAfterBackup = Utils.parseBoolean(args[3], stopAfterBackup);
 		}
 		
-		System.out.println("1");
+		
 		boolean backupRestarted=false, canRestore;
 		
 		int start=0;
@@ -71,7 +71,7 @@ public class SimulatorCLI {
 		String lastIntermediaryFilename="", backupFile, tmpBackupFile;
 		
 		
-		System.out.println("1");
+		
 		//restart a backup file
 		File dir = new File(System.getProperty("user.dir"));
 		String[] files = dir.list();
@@ -147,7 +147,7 @@ public class SimulatorCLI {
 				}	
 			}
 		}
-		System.out.println("11111");
+			
 		if(tmpBackupFile !=null && !tmpBackupFile.isEmpty()){
 			FileInputStream fis = null;
 			ObjectInputStream in = null;
@@ -158,7 +158,7 @@ public class SimulatorCLI {
 				backupRestarted = true;
 				time = cell.cellTime;
 				cell.ensemble = ensemble;
-				System.out.println("1");
+				
 				int actualStart = (int)Math.round(cell.cellTime/(cell.totalStopTime/steps));
 				System.out.println("start="+start+"; actualStart = "+actualStart+"");
 				
@@ -173,14 +173,12 @@ public class SimulatorCLI {
 				e.printStackTrace();
 			}
 		}
-		System.out.println("11111");
+		
 		if(!backupRestarted){
-			System.out.println("in if");
 			cell = new Cell(parametersFilename, null, true);
-			
 		}
 		
-		System.out.println("22222");
+		
 		double stopTime = cell.getTotalStopTime();
 		double timeStep = stopTime/steps;
 		int i=start;

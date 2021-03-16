@@ -22,7 +22,7 @@ public class TFfileParser {
 	
 	
 	
-	public TFfileParser(Cell n, String filename, int defaultCopyNumber, double defaultEs, int defaultSizeLeft, int defaultSizeRight, double defaultAssocRate, int DNAsize, double defaultUnBindingProbability,  double defaultSlideLeftProbability, double defaultSlideRightProbability, double defaultJumpingProbability, double defaultHopSTDdisplacement, double defaultSpecificWaitingTime, int defaultStepLeftSize, int defaultStepRightSize, int defaultUncorrelatedDisplacementSize, boolean defaultStallsIfBlocked, double defaultCollisionUnbindingProbability, double defaultAffinityLandscapeRoughness, double defaultPreboundProportion, boolean defaultPreboundToHighestAffinity, boolean defaultIsImmobile, DNAregion dnaRegion, boolean deafultIsBiasedRandomWalk, boolean defaultIsTwoStateRandomWalk){
+	public TFfileParser(Cell n, String filename, int defaultCopyNumber, double defaultEs, int defaultSizeLeft, int defaultSizeRight, double defaultAssocRate, int DNAsize, double defaultUnBindingProbability,  double defaultSlideLeftProbability, double defaultSlideRightProbability, double defaultJumpingProbability, double defaultHopSTDdisplacement, double defaultSpecificWaitingTime, int defaultStepLeftSize, int defaultStepRightSize, int defaultUncorrelatedDisplacementSize, boolean defaultStallsIfBlocked, double defaultCollisionUnbindingProbability, double defaultAffinityLandscapeRoughness, double defaultPreboundProportion, boolean defaultPreboundToHighestAffinity, boolean defaultIsImmobile, DNAregion dnaRegion, boolean deafultIsBiasedRandomWalk, boolean defaultIsTwoStateRandomWalk, double pkMicroenv){
 		parsed = false;
 		data = new  ArrayList<TFspecies>();
 		
@@ -84,7 +84,7 @@ public class TFfileParser {
 				boolean isImmobile;
 				boolean isBiasedRandomWalk;
 				boolean isTwoStateRandomWalk;
-
+				double pkMicro;
 				for(ArrayList<String> buffer: csv.data){
 					//init params
 					name="";
@@ -113,7 +113,7 @@ public class TFfileParser {
 					isImmobile=defaultIsImmobile;
 					isBiasedRandomWalk = deafultIsBiasedRandomWalk;
 					isTwoStateRandomWalk = defaultIsTwoStateRandomWalk;
-					
+					pkMicro= pkMicroenv;
 					//NAME
 					if(csv.header.containsKey(Constants.PARSER_TF_CSV_FILE_HEADER[0])){
 						cellContent =buffer.get(csv.header.get(Constants.PARSER_TF_CSV_FILE_HEADER[0])); 
@@ -323,9 +323,14 @@ public class TFfileParser {
 					} else{
 						n.printDebugInfo("TF file "+filename+" misses TF is two state random walk at line: "+buffer);
 					}		
-					
+					if(csv.header.containsKey(Constants.PARSER_TF_CSV_FILE_HEADER[25])) {
+						cellContent = buffer.get(csv.header.get(Constants.PARSER_TF_CSV_FILE_HEADER[25]));
+						pkMicro = Utils.parseDouble(cellContent, pkMicro);
+					} else {
+						n.printDebugInfo("TF file "+filename+" misses TF probability to keep in microenv at line: "+buffer);
+					}
 					if(copyNumber>0){
-						data.add(new TFspecies(dnaRegion, id, name,  bufferDBD, copyNumber, es, sizeLeft, sizeRight, assocRate,bufferDNAregion,isCognate,  unBindingProbability,  slideLeftProbability,  slideRightProbability,  jumpingProbability,  hopSTDdisplacement, specificWaitingTime,  stepLeftSize,  stepRightSize,  uncorrelatedDisplacementSize,  stallsIfBlocked,  collisionUnbindingProbability, affinityLandscapeRoughness, preboundProportion, preboundToHighestAffinity, isImmobile, isBiasedRandomWalk, isTwoStateRandomWalk,n));
+						data.add(new TFspecies(dnaRegion, id, name,  bufferDBD, copyNumber, es, sizeLeft, sizeRight, assocRate,bufferDNAregion,isCognate,  unBindingProbability,  slideLeftProbability,  slideRightProbability,  jumpingProbability,  hopSTDdisplacement, specificWaitingTime,  stepLeftSize,  stepRightSize,  uncorrelatedDisplacementSize,  stallsIfBlocked,  collisionUnbindingProbability, affinityLandscapeRoughness, preboundProportion, preboundToHighestAffinity, isImmobile, isBiasedRandomWalk, isTwoStateRandomWalk,pkMicro,n));
 						
 						id++;
 					}

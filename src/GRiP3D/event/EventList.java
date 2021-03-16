@@ -21,11 +21,11 @@ public class EventList  implements Serializable{
 	 */
 	public TFBindingEventQueue TFBindingEventQueue;
 	public TFRandomWalkEventQueue TFRandomWalkEventQueue;
-
+	public SimulationEventQueue SimulationEventQueue;
 	
 	public EventList(Cell n){
 		
-
+		SimulationEventQueue = new SimulationEventQueue(n);
 		TFBindingEventQueue = new TFBindingEventQueueDNAOccupancy(n);
 		
 		
@@ -50,8 +50,10 @@ public class EventList  implements Serializable{
 	public ProteinEvent popNextTFBindingEvent(){
 		return TFBindingEventQueue.pop();
 	}
-
 	
+	public SimulationEvent popNextSimulationEvent() {
+		return SimulationEventQueue.pop();
+	}
 	
 	
 	/**
@@ -83,7 +85,10 @@ public class EventList  implements Serializable{
 			nextEventTime = TFRandomWalkEventQueue.peek().time;
 			result = Constants.NEXT_EVENT_IS_TF_RANDOM_WALK;
 		}
-				
+		if(!SimulationEventQueue.isEmpty() && nextEventTime > SimulationEventQueue.peek().time){
+			nextEventTime =SimulationEventQueue.peek().time;
+			result = Constants.NEXT_EVENT_IS_SIMULATION;
+		}		
 		return result;
 	}
 	
@@ -100,7 +105,7 @@ public class EventList  implements Serializable{
 			case Constants.NEXT_EVENT_IS_NONE: break; 
 			case Constants.NEXT_EVENT_IS_TF_BINDING: e =this.popNextTFBindingEvent(); break;
 			case Constants.NEXT_EVENT_IS_TF_RANDOM_WALK: e =this.popNextTFRandomWalkEvent(); break;
-
+			case Constants.NEXT_EVENT_IS_SIMULATION: e=this.popNextSimulationEvent(); break;
 			default: e=null;
 		}
 		
@@ -112,7 +117,7 @@ public class EventList  implements Serializable{
 	 * @return
 	 */
 	public boolean isEmpty(){
-		if((TFBindingEventQueue==null || TFBindingEventQueue.isEmpty()) && (TFRandomWalkEventQueue==null || TFRandomWalkEventQueue.isEmpty()) ){
+		if((TFBindingEventQueue==null || TFBindingEventQueue.isEmpty()) && (TFRandomWalkEventQueue==null || TFRandomWalkEventQueue.isEmpty()) &&(SimulationEventQueue==null || SimulationEventQueue.isEmpty())){
 			return true;
 		}
 		return false;
@@ -125,7 +130,9 @@ public class EventList  implements Serializable{
 	 */
 	public int size(){
 		int result=0;
-
+		if(SimulationEventQueue!=null) {
+			result++;
+		}
 
 		if(TFBindingEventQueue!=null && !TFBindingEventQueue.isEmpty()){
 			result++;
@@ -138,6 +145,20 @@ public class EventList  implements Serializable{
 		return result;
 	}
 	
+	
+	public void scheduleNextSimulationEvent(Cell n, double time) {
+	        	//System.out.println(this.SimulationEventQueue.simulationPropensity);
+		if(this.SimulationEventQueue.simulationPropensity>0 ) {
+				
+				//n.HIC_CONTACT_MATRIX.simulateMatrix(n.randomGenerator);
+				 
+				double simulationTime= SimulationEventQueue.generateExponentialDistribution(n.ip.PROPORTION_TIME.value,n);
+				
+			//	System.out.println(n.totalElapsedTime+time);
+				 this.SimulationEventQueue.add(new SimulationEvent(n.cellTime+simulationTime, Constants.EVENT_SIMULATION, true));
+				
+		}
+	}
 	/**
 	 * schedules the next TF binding event
 	 */

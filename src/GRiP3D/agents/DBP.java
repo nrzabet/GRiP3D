@@ -29,6 +29,7 @@ public abstract class DBP  implements Serializable{
 	
 	public ProteinEvent pe;
 	
+	
 	protected int direction;// the direction on which it is bound 0 for 5' -> 3' or 1 for 3' -> 5' 
 	
 	protected double timeBound;
@@ -68,6 +69,7 @@ public abstract class DBP  implements Serializable{
 		leftNeighbour=Constants.NONE;
 		rightNeighbour=Constants.NONE;	
 		pe=null;
+
 		stickToLeft = Constants.NONE;
 		stickToRight = Constants.NONE;
 		
@@ -99,7 +101,7 @@ public abstract class DBP  implements Serializable{
 		leftNeighbour=Constants.NONE;
 		rightNeighbour=Constants.NONE;
 		pe = null;
-		
+
 		stickToLeft = Constants.NONE;
 		stickToRight = Constants.NONE;
 		
@@ -392,7 +394,7 @@ public abstract class DBP  implements Serializable{
 	public abstract boolean unbindMolecule(Cell n, double time);
 	public abstract int bindMolecule(Cell n, double time, int newPosition);
 	public abstract int bindMolecule(Cell n, double time, int newPosition, int direction);
-	public abstract int hopMolecule(Cell n, double time, int newPosition);
+	public abstract int hopMolecule(Cell n, double time, int newPosition,boolean is3Dhopping);
 	public abstract int slideLeftMolecule(Cell n, double time, int newPosition, boolean isHopEvent);
 	public abstract int slideRightMolecule(Cell n, double time, int newPosition, boolean isHopEvent);
 

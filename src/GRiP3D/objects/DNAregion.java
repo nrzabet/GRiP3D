@@ -156,9 +156,12 @@ public class DNAregion  implements Serializable{
 	 * compares the current DNA region to the one provided as an argument and returns true if they are equal
 	 * @param region
 	 * @return
+	 * @throws Exception 
 	 */
-	public boolean equals(DNAregion region){
+	public boolean equals(DNAregion region) {
+		//System.out.println(this + " ?= " + region + " "+(this.chromosome.equals(region.chromosome) && this.start == region.start && this.end == region.end));
 		return this.start == region.start && this.end==region.end && this.chromosome.equals(region.chromosome);
+	    
 	}
 	
 	/**

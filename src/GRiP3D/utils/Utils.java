@@ -7,6 +7,8 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Random;
 
+import environment.Cell;
+
 /**
  * a class with useful general methods to write into a file or generate random numbers
  * @author n.r.zabet@gen.cam.ac.uk
@@ -21,7 +23,9 @@ public class Utils {
 	
 	
 
-	
+	public double generateExponentialDistribution(double mean,Cell n) {
+		return Math.log(1-n.randomGenerator.nextDouble())/(-mean);
+	}
 	/**
 	 * generates a random double number between two values. when the two values are equal it returns default value
 	 * @param generator
@@ -54,7 +58,7 @@ public class Utils {
 
 
 	/**
-	 * returns a normal distributed integer with a specific mean and  stdandard deviation
+	 * returns a normal distributed integer with a specific mean and  standard deviation
 	 * @param generator
 	 * @param mean
 	 * @param stddev

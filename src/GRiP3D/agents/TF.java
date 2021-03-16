@@ -23,7 +23,7 @@ public class TF extends DBP  implements Serializable {
 	private static final long serialVersionUID = -7084470998818754958L;
 	private TFcooperativity bufferCoop;
 	private int boundMolecule;
-	
+	//private double PK_MICROENV;
 	/**
 	 * empty class constructor
 	 */
@@ -58,7 +58,7 @@ public class TF extends DBP  implements Serializable {
 		double previousTimeOfLastPositionChange = this.timeOfLastPositionChange;
 		int oldDirection = this.direction;
 		
-
+		
 		
 		if(this.position==Constants.NONE){
 			//this is a binding event
@@ -68,7 +68,11 @@ public class TF extends DBP  implements Serializable {
 			if(pe.nextAction == Constants.EVENT_TF_RANDOM_WALK_JUMP){
 				//the TF unbinds
 				unbindMolecule(n, pe.time);
-			} else if(pe.nextAction == Constants.EVENT_TF_RANDOM_WALK_HOP){
+			} else if(pe.nextAction == Constants.EVENT_TF_3D_HOP) {
+				System.out.println("Help again 3d hop");
+				hopMolecule(n, pe.time, pe.position,true);
+				
+			} else if(pe.nextAction == Constants.EVENT_TF_RANDOM_WALK_HOP){System.out.println("in random_hop I dunno what is going on");
 				if(pe.position == this.position){			
 					//the TF hops and rebinds at the same position
 					resetPosition(pe.time);
@@ -85,7 +89,7 @@ public class TF extends DBP  implements Serializable {
 					this.initSlidingExtremes();
 				} else{
 					//the TF hops and rebinds at a different position
-					hopMolecule(n, pe.time, pe.position);
+					hopMolecule(n, pe.time, pe.position,false);
 				}
 			} else if(pe.nextAction == Constants.EVENT_TF_RANDOM_WALK_SLIDE_LEFT){
 				
@@ -98,7 +102,7 @@ public class TF extends DBP  implements Serializable {
 					if(n.isInDebugMode()){
 						n.printDebugInfo(pe.time+" TF "+this.ID+" reached left limit and, due to periodic boundary condition, it will attempt to bind at the end!");
 					}
-					hopMolecule(n, pe.time, n.dna.strand.length - this.size-1);
+					hopMolecule(n, pe.time, n.dna.strand.length - this.size-1,false);
 				} else{
 					if(pe.position>=0){
 						slideLeftMolecule(n,  pe.time, pe.position, pe.isHoppingEvent);
@@ -119,7 +123,7 @@ public class TF extends DBP  implements Serializable {
 					if(n.isInDebugMode()){
 						n.printDebugInfo(pe.time+" TF "+this.ID+" reached right limit and, due to periodic boundary condition, it will attempt to bind at the start!");
 					}
-					hopMolecule(n, pe.time, 0);
+					hopMolecule(n, pe.time, 0,false);
 				} else{
 					if(pe.position < (n.dna.strand.length - this.size)){
 						slideRightMolecule(n, pe.time, pe.position, pe.isHoppingEvent);						
@@ -682,20 +686,20 @@ public class TF extends DBP  implements Serializable {
 	
 	}
 	
-	
 	/**
 	 * attempts to rebind a TF to the DNA 
 	 * @param moleculeID the ID of the TF that binds
 	 * @param time the time
 	 */
-	public int hopMolecule(Cell n, double time, int newPosition){
+	public int hopMolecule(Cell n, double time, int newPosition, boolean is3Dhopping){
  		int bound = Constants.NONE, leftExtreme = Constants.NONE, rightExtreme = Constants.NONE;
-		
+ 		System.out.println("in hop molecule");
 		//check if the TF can rebind
 		boolean canBind = n.dna.effectiveTFavailability[this.speciesID][newPosition];
 		
 		// if it cannot rebind or it doesn't matter if it can rebind => unbinds the TF
-		if(canBind || !n.TFspecies[speciesID].stallsHoppingIfBlocked){
+		if(canBind || !n.TFspecies[speciesID].stallsHoppingIfBlocked){ 
+			System.out.println("is testing my nerves");
 			if(n.ip.OUTPUT_SLIDING_LENGTHS.value ){
 				leftExtreme = this.observedLeftMostPosition;
 				rightExtreme = this.observedRightMostPosition;
@@ -708,7 +712,7 @@ public class TF extends DBP  implements Serializable {
 			unbindMolecule(n,time);
 		
 			//if unbound but can rebind then rebind the TF
-			if(canBind){
+			if(canBind){System.out.println("is testing my nerves again");
 				//attempt rebind
 				bound = bindMolecule(n, time, newPosition);
 				if(n.ip.OUTPUT_SLIDING_LENGTHS.value && leftExtreme!=Constants.NONE && rightExtreme!=Constants.NONE){
@@ -719,9 +723,12 @@ public class TF extends DBP  implements Serializable {
 				
 				//if rebound the last position is reseted to the previous one before unbinding
 				this.lastPosition = oldLastPosition;
-				
-				n.TFspecies[speciesID].countTFHoppingEvents++;
-				
+				System.out.println("Help please");
+				if(is3Dhopping) {System.out.println("Help");
+				n.TFspecies[speciesID].countTF3DHoppingEvents++;
+				} else {
+					n.TFspecies[speciesID].countTFHoppingEvents++;
+				}
 			}
 								
 		} 

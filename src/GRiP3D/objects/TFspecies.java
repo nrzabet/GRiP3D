@@ -81,7 +81,8 @@ public class TFspecies  implements Serializable {
 	public long countTFSlideLeftEvents;
 	public long countTFSlideRightEvents;
 	public long countTFHoppingEvents;
-
+	public long countTF3DHoppingEvents;
+	
 	public long countTFforcedJumpsEvents;
 	public long countTFHopsOutside;
 
@@ -111,6 +112,7 @@ public class TFspecies  implements Serializable {
 	
 	public boolean isImmobile;
 	
+	public double PK_MICROENV;
 	//public double moveRateThreshold;
 	
 	/**
@@ -122,7 +124,7 @@ public class TFspecies  implements Serializable {
 	 * @param ens
 	 * @param es
 	 */
-	public TFspecies(int id, byte[] DNAstrand, int pos, int dbdLength, int copyNumber, double es, DNAregion dnaRegion, int sizeLeft, int sizeRight, double assocRate,  DNAregion initialDrop, boolean isCognate, double unBindingProbability, double slideLeftProbability, double slideRightProbability, double jumpingProbability, double hopSTDdisplacement, double specificWaitingTime, int stepLeftSize, int stepRightSize, int uncorrelatedDisplacementSize, boolean stallsIfBlocked, double collisionUnbindingProbability, double affinityLandscapeRoughness, double preboundProportion, boolean preboundToHighestAffinity, boolean isImmobile, int TFdirections, boolean isBiasedRandomWalk, boolean isTwoStateRandomWalk){
+	public TFspecies(int id, byte[] DNAstrand, int pos, int dbdLength, int copyNumber, double es, DNAregion dnaRegion, int sizeLeft, int sizeRight, double assocRate,  DNAregion initialDrop, boolean isCognate, double unBindingProbability, double slideLeftProbability, double slideRightProbability, double jumpingProbability, double hopSTDdisplacement, double specificWaitingTime, int stepLeftSize, int stepRightSize, int uncorrelatedDisplacementSize, boolean stallsIfBlocked, double collisionUnbindingProbability, double affinityLandscapeRoughness, double preboundProportion, boolean preboundToHighestAffinity, boolean isImmobile, int TFdirections, boolean isBiasedRandomWalk, boolean isTwoStateRandomWalk, double pk_microenv){
 		this.id = id;
 		name="TF"+id;
 		this.es = es;
@@ -176,6 +178,8 @@ public class TFspecies  implements Serializable {
 		this.countTFSlideLeftEvents =0;
 		this.countTFSlideRightEvents =0;
 		this.countTFHoppingEvents =0;
+		this.countTF3DHoppingEvents=0; //
+		
 		this.countTFforcedJumpsEvents=0;
 		this.countTFHopsOutside=0;
 		
@@ -194,7 +198,7 @@ public class TFspecies  implements Serializable {
 		this.isBiasedRandomWalk = isBiasedRandomWalk;
 		this.isTwoStateRandomWalk = isTwoStateRandomWalk;
 		this.dbdFile="";
-		
+		this.PK_MICROENV =pk_microenv;
 	}
 	
 	
@@ -207,9 +211,10 @@ public class TFspecies  implements Serializable {
 	 * @param copyNumber the copyNumber
 	 * @param ens the non specific energy
 	 * @param es the specific energy
+	 * @param pkMicro 
 	 * @param ts the list of target sites
 	 */
-	public TFspecies(DNAregion dnaRegion, int id, String name, String dbd, int copyNumber, double es, int sizeLeft, int sizeRight, double assocRate,  DNAregion initialDrop, boolean isCognate, double unBindingProbability, double slideLeftProbability, double slideRightProbability, double jumpingProbability, double hopSTDdisplacement, double specificWaitingTime, int stepLeftSize, int stepRightSize, int uncorrelatedDisplacementSize, boolean stallsIfBlocked, double collisionUnbindingProbability, double affinityLandscapeRoughness, double preboundProportion, boolean preboundToHighestAffinity, boolean isImmobile,  boolean isBiasedRandomWalk, boolean isTwoStateRandomWalk, Cell n){
+	public TFspecies(DNAregion dnaRegion, int id, String name, String dbd, int copyNumber, double es, int sizeLeft, int sizeRight, double assocRate,  DNAregion initialDrop, boolean isCognate, double unBindingProbability, double slideLeftProbability, double slideRightProbability, double jumpingProbability, double hopSTDdisplacement, double specificWaitingTime, int stepLeftSize, int stepRightSize, int uncorrelatedDisplacementSize, boolean stallsIfBlocked, double collisionUnbindingProbability, double affinityLandscapeRoughness, double preboundProportion, boolean preboundToHighestAffinity, boolean isImmobile,  boolean isBiasedRandomWalk, boolean isTwoStateRandomWalk, double pkMicro, Cell n){
 		this.id = id; 
 		this.name=name; 
 		this.isCognate = false;
@@ -278,6 +283,8 @@ public class TFspecies  implements Serializable {
 		this.countTFSlideLeftEvents =0;
 		this.countTFSlideRightEvents =0;
 		this.countTFHoppingEvents =0;
+		this.countTF3DHoppingEvents =0; //
+		
 		this.countTFforcedJumpsEvents=0;
 		this.countTFHopsOutside=0;
 		
@@ -293,7 +300,7 @@ public class TFspecies  implements Serializable {
 		//moveRateThreshold = Constants.NONE;
 		this.isBiasedRandomWalk = isBiasedRandomWalk;
 		this.isTwoStateRandomWalk = isTwoStateRandomWalk;
-		
+		this.PK_MICROENV=pkMicro;
 
 	}
 
@@ -479,13 +486,13 @@ public class TFspecies  implements Serializable {
 		//\"ES\", \"COPYNUMBER\", \"SIZELEFT\", \"SIZERIGHT\", \"ASSOCRATE\", \"INITIALDROP\", \"UNBINDINGPROBABILITY\", \"SLIDELEFTPROBABILITY\", \"SLIDERIGHTPROBABILITY\", \"JUMPINGPROBABILITY\", \"HOPSTDDISPLACEMENT\", \"SPECIFICWAITINGTIME\", \"STEPLEFTSIZE\", \"STEPRIGHTSIZE\", \"UNCORRELATEDDISPLACEMENTSIZE\", \"STALLSIFBLOCKED\", \"COLLISIONUNBINDPROBABILITY\", \"AFFINITYLANDSCAPEROUGHNESS\", \"PREBOUNDPROPORTION\", \"PREBOUNDTOHIGHESTAFFINITY\"
 		str+="\","+es+", "+copyNumber+", "+this.sizeLeft+", "+this.sizeRight+", "+this.assocRate+", \""+this.initialDrop+"\"" + ", " +    unBindingProbability + ", " +    slideLeftProbability + ", " +    slideRightProbability + ", " +    jumpingProbability + ", " +    hopSTDdisplacement + ", " +    specificWaitingTime + ", " +    stepLeftSize + ", " +    stepRightSize + ", " +    uncorrelatedDisplacementSize + ", " +    stallsHoppingIfBlocked + ", " +    collisionUnbindingProbability+ ", " +     affinityLandscapeRoughness+", "+preboundProportion+ ", "+preboundToHighestAffinity+ ", "+isImmobile;
 		
-		//"ISBIASEDRANDOMWALK\", \"ISTWOSTATERANDOMWALK\",
-		str+= ", "+this.isBiasedRandomWalk +", "+ this.isTwoStateRandomWalk;
+		//"ISBIASEDRANDOMWALK\", \"ISTWOSTATERANDOMWALK\", \"PKMICROENV\",
+		str+= ", "+this.isBiasedRandomWalk +", "+ this.isTwoStateRandomWalk+ ", "+this.PK_MICROENV;;
 		
 		
 		if(!reduced){
-			//"eventsBindingTotal\", \"eventsUnbindingTotal\", \"eventsSlideLeftTotal\", \"eventsSlideRightTotal\", \"eventsSlideTotal\", \"eventsHoppingTotal\", \"eventsForcedJumps\", \"eventsHopOutsideDNA\", \"collisionsCount\",		
-			str+=  ", "+ (this.countTFBindingEvents) + ", " + (this.countTFUnbindingEvents)+ ", " + (this.countTFSlideLeftEvents) + ", " + (this.countTFSlideRightEvents) + ", " + (this.countTFSlideLeftEvents+this.countTFSlideRightEvents) + ", " + (this.countTFHoppingEvents)+ ", " + (this.countTFforcedJumpsEvents)+ ", " + (this.countTFHopsOutside)+ ", " + (n.dna.collisionsCountTotal);
+			//"eventsBindingTotal\", \"eventsUnbindingTotal\", \"eventsSlideLeftTotal\", \"eventsSlideRightTotal\", \"eventsSlideTotal\", \"eventsHoppingTotal\", \"events3DHoppingTotal\", \"eventsForcedJumps\", \"eventsHopOutsideDNA\", \"collisionsCount\",		
+			str+=  ", "+ (this.countTFBindingEvents) + ", " + (this.countTFUnbindingEvents)+ ", " + (this.countTFSlideLeftEvents) + ", " + (this.countTFSlideRightEvents) + ", " + (this.countTFSlideLeftEvents+this.countTFSlideRightEvents) + ", " + (this.countTFHoppingEvents)+ ", " + (this.countTF3DHoppingEvents)+", " + (this.countTFforcedJumpsEvents)+ ", " + (this.countTFHopsOutside)+ ", " + (n.dna.collisionsCountTotal);
 	
 			//     \"sizeTotal\"" , \"isCognate\"
 			str+=  ", "+this.sizeTotal+", " + this.isCognate;
@@ -511,9 +518,9 @@ public class TFspecies  implements Serializable {
 	//}
 	
 	public String headerToString(boolean reduced){
-		String str = "\"name\", \"DBD\", \"ES\", \"COPYNUMBER\", \"SIZELEFT\", \"SIZERIGHT\", \"ASSOCRATE\", \"INITIALDROP\", \"UNBINDINGPROBABILITY\", \"SLIDELEFTPROBABILITY\", \"SLIDERIGHTPROBABILITY\", \"JUMPINGPROBABILITY\", \"HOPSTDDISPLACEMENT\", \"SPECIFICWAITINGTIME\", \"STEPLEFTSIZE\", \"STEPRIGHTSIZE\", \"UNCORRELATEDDISPLACEMENTSIZE\", \"STALLSIFBLOCKED\", \"COLLISIONUNBINDPROBABILITY\", \"AFFINITYLANDSCAPEROUGHNESS\", \"PREBOUNDPROPORTION\", \"PREBOUNDTOHIGHESTAFFINITY\", \"TFISIMMOBILE\", \"ISBIASEDRANDOMWALK\", \"ISTWOSTATERANDOMWALK\"";
+		String str = "\"name\", \"DBD\", \"ES\", \"COPYNUMBER\", \"SIZELEFT\", \"SIZERIGHT\", \"ASSOCRATE\", \"INITIALDROP\", \"UNBINDINGPROBABILITY\", \"SLIDELEFTPROBABILITY\", \"SLIDERIGHTPROBABILITY\", \"JUMPINGPROBABILITY\", \"HOPSTDDISPLACEMENT\", \"SPECIFICWAITINGTIME\", \"STEPLEFTSIZE\", \"STEPRIGHTSIZE\", \"UNCORRELATEDDISPLACEMENTSIZE\", \"STALLSIFBLOCKED\", \"COLLISIONUNBINDPROBABILITY\", \"AFFINITYLANDSCAPEROUGHNESS\", \"PREBOUNDPROPORTION\", \"PREBOUNDTOHIGHESTAFFINITY\", \"TFISIMMOBILE\", \"ISBIASEDRANDOMWALK\", \"ISTWOSTATERANDOMWALK\", \"PKMICROENV\"";
 		if(!reduced){
-			str+= ", \"eventsBindingTotal\", \"eventsUnbindingTotal\", \"eventsSlideLeftTotal\", \"eventsSlideRightTotal\", \"eventsSlideTotal\", \"eventsHoppingTotal\", \"eventsForcedJumps\", \"eventsHopOutsideDNA\", \"collisionsCount\", \"sizeTotal\", \"isCognate\", \"timeBoundAvg\", \"residenceTimePerBinding\", \"slidingEventsPerBinding\", \"slidingLengthPerBinding\", \"observedSlidingLengthPerBinding\", \"cooperativity\"";
+			str+= ", \"eventsBindingTotal\", \"eventsUnbindingTotal\", \"eventsSlideLeftTotal\", \"eventsSlideRightTotal\", \"eventsSlideTotal\", \"eventsHoppingTotal\", \"events3DHoppingTotal\", \"eventsForcedJumps\", \"eventsHopOutsideDNA\", \"collisionsCount\", \"sizeTotal\", \"isCognate\", \"timeBoundAvg\", \"residenceTimePerBinding\", \"slidingEventsPerBinding\", \"slidingLengthPerBinding\", \"observedSlidingLengthPerBinding\", \"cooperativity\"";
 		}
 		return str;
 	}

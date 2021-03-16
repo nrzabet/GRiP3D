@@ -206,7 +206,12 @@ public class SimulatorGUI {
 		loaded = false;
 		simulationsLoad.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
-				loadSimulation();
+				try {
+					loadSimulation();
+				} catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 			}
 		});
 		simulationArea.add(simulationsLoad);
@@ -252,7 +257,12 @@ public class SimulatorGUI {
 		simulationsStart.setEnabled(false);
 		simulationsStart.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
-				startSimulation();
+				try {
+					startSimulation();
+				} catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 			}
 		});
 		simulating=false;
@@ -682,8 +692,9 @@ public class SimulatorGUI {
 	/**
 	 * the load button was pressed
 	 * load the simulations and first save the file
+	 * @throws Exception 
 	 */
-	private void loadSimulation(){
+	private void loadSimulation() throws Exception{
 		
 		if(simulatorThread!=null){
 			simulatorThread = null;
@@ -744,8 +755,9 @@ public class SimulatorGUI {
 	
 	/**
 	 * start/pause simulation was pressed
+	 * @throws Exception 
 	 */
-	private void startSimulation(){
+	private void startSimulation() throws Exception{
 		this.simulationsStart.setEnabled(false);
 		if(!simulating){
 

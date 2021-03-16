@@ -18,7 +18,7 @@ import java.util.Random;
 import event.Event;
 import event.EventList;
 import event.ProteinEvent;
-
+import event.SimulationEvent;
 import agents.DBP;
 import agents.TF;
 
@@ -27,6 +27,7 @@ import objects.DNAregion;
 import objects.TFcooperativity;
 import objects.TFspecies;
 import objects.InputParameters;
+import objects.InteractionMatrix;
 import objects.TargetSitesAndGroups;
 import simulator.SimulatorGUI;
 import utils.CellUtils;
@@ -101,6 +102,7 @@ public class Cell implements Serializable {
 	public String outputTargetSiteFile;
 	public String outputIntermediaryBackupFile;
 	public String outputIntermediaryInfoFile;
+	public String outputCumulativeSimulatedMatrix;
 	
 	public ArrayList<String> TargetSiteFollowLines;
 
@@ -109,36 +111,41 @@ public class Cell implements Serializable {
 	public boolean runUntilTSReached;
 	//public BufferedWriter statusBuffer;
 	
+	//contact Matrix
+	public InteractionMatrix HIC_CONTACT_MATRIX;
+	public int binWidth;
+	
+	
+	
 	/**
 	 * constructor that initialises a nucleus
-	 * @throws FileNotFoundException 
+	 * @throws Exception 
 	 */
-	public Cell(String parametersFile, SimulatorGUI gui, boolean newParamsFile) throws FileNotFoundException{
+	public Cell(String parametersFile, SimulatorGUI gui, boolean newParamsFile) throws Exception{
 			
 		this.gui=gui;
-		System.out.println("13333311");
+		
 		ip = new InputParameters(parametersFile);
 				
 		String paramsFile = parametersFile;
 		if(newParamsFile){
 			paramsFile = "";
 		}
-		System.out.println("help");
+		
 		this.outputParamsFile = ip.exportParameterFile(paramsFile);
 		this.outputPath=ip.outputDirectory;
 		
 		generateOutputFilenames(this.outputParamsFile);
-		System.out.println("croissant");
+		
 	
 		//initialise internal parameters
 		initialiseInternalParameters();
-		System.out.println("internal parameters");
+		
 		//initialise output parameters
 		//initialiseOutputParameters();
 		
 		printInitInfo();
 		printPreprocesedInfo();
-		System.out.println("strudel");
 	}
 	
 	
@@ -158,18 +165,19 @@ public class Cell implements Serializable {
 		this.outputDNAOccupancyFinalFile =  paramsFilename.getName().replaceAll("params", "DNA_occupancy_final").replaceAll(Constants.PARAMETR_FILE_EXTENSION, Constants.OCCUPANCY_FILE_EXTENSION);
 		this.outputIntermediaryBackupFile =  "backup_"+paramsFilename.getName().replaceAll("_params", "").replaceAll(Constants.PARAMETR_FILE_EXTENSION, Constants.BACKUP_FILE_EXTENSION);
 		this.outputIntermediaryInfoFile =  "backup_"+paramsFilename.getName().replaceAll("_params", "").replaceAll(Constants.PARAMETR_FILE_EXTENSION, Constants.INFO_FILE_EXTENSION);
+		this.outputCumulativeSimulatedMatrix = paramsFilename.getName().replaceAll("params", "cumulative_simulated_matrix").replaceAll(Constants.PARAMETR_FILE_EXTENSION, Constants.TF_FILE_EXTENSION);
 	}
 	
 	/**
 	 * initialises the internal parameters
-	 * @throws FileNotFoundException 
+	 * @throws Exception 
 	 */
-	private void initialiseInternalParameters() throws FileNotFoundException{
+	private void initialiseInternalParameters() throws Exception{
 		
 		
 		//create the random number generator
 		 createRandomNumberGenerator();
-		
+	
 		this.cellTime = 0;
 		this.totalSimulatedTime = 0;
 		this.totalStopTime = this.ip.STOP_TIME.value;
@@ -182,9 +190,11 @@ public class Cell implements Serializable {
 		if(this.ip.TF_READ_IN_BOTH_DIRECTIONS.value){
 			this.TFreadingDirection = 2;
 		}
+		this.binWidth =this.ip.BIN_WIDTH.value;
+
+		//this.HIC_CONTACT_MATRIX= new InteractionMatrix();
 		
 		generateObjects();
-		System.out.println("generate objects");
 		
 		//TS to be reached;
 		areTargetSitesToBeReached = false;
@@ -193,7 +203,7 @@ public class Cell implements Serializable {
 		}
 		this.targetSitesReached = 0;
 		initTargetSitesToFollow();
-		System.out.println("target site to follow");
+		
 
 		TFstoFollow = new HashMap<Integer,String>();
 		TFstoFollowFiles = new HashMap<Integer,String>();
@@ -203,19 +213,17 @@ public class Cell implements Serializable {
 		stepPointTFstoFollow = this.totalStopTime;		
 		
 		getTFsToFollow();
-		System.out.println("TFs that follow");
+		
 		eventQueue = new EventList(this);
-		System.out.println("created event list");
 
 		this.bindMolecules();
 		this.ensemble=0;
 		
-		System.out.println("finish initiation");
 		this.runUntilTSReached=false;
+	
 	}
+	
 
-	
-	
 	/**
 	 * initialises the internal parameters
 	 * @throws FileNotFoundException 
@@ -326,8 +334,6 @@ public class Cell implements Serializable {
 				            ex.printStackTrace();
 				        }
 						
-						
-						
 					} else{
 						this.printDebugInfo("There is no molecule of TF "+ buffer+".");
 					}
@@ -348,6 +354,39 @@ public class Cell implements Serializable {
 		}
 	}
 	
+	/**
+	 * prints details regarding the bins the interacting score between them and the cumulative simulation time
+	 * @param filename The name of output file
+	 */
+	private void saveCumulativeMatrix(String filename) {
+		// checks if there is a HIC interacting matrix file
+		if(!this.ip.HIC_CONTACT_MATRIX_FILE.value.isEmpty()){
+			BufferedWriter bufferFile =  null;
+			try {
+            //Construct the BufferedWriter object
+        		if(this.outputPath.isEmpty()){
+        			bufferFile = new BufferedWriter(new FileWriter(filename));
+        		} else{
+        			bufferFile = new BufferedWriter(new FileWriter(new File(this.outputPath,filename)));
+        		}   
+        		bufferFile.write(this.HIC_CONTACT_MATRIX.headerToString());
+        		bufferFile.newLine();
+        		for(int i=0; i<this.HIC_CONTACT_MATRIX.getBinSize();i++) {
+        			for(int j=0; j<this.HIC_CONTACT_MATRIX.getBinSize();j++) {
+        					bufferFile.write(this.HIC_CONTACT_MATRIX.toString(i, j));
+		        		bufferFile.newLine();
+        			}
+        		} 	
+        		bufferFile.flush();
+        		bufferFile.close();
+			 } catch (FileNotFoundException ex) {
+		            ex.printStackTrace();
+		        } catch (IOException ex) {
+		            ex.printStackTrace();
+		        }
+		}
+			
+	}
 	
 	/**
 	 * generates the Target Sites to follow file based on a string 
@@ -402,6 +441,19 @@ public class Cell implements Serializable {
 		}
 	}
 	
+	/**
+	 * either load the Contact matrix from a file or generate an empty one
+	 * @throws Exception 
+	 */
+	private void createInteractionMatrix() throws Exception{
+		if(ip.HIC_CONTACT_MATRIX_FILE.value!=null) { 
+			this.HIC_CONTACT_MATRIX = new InteractionMatrix(ip.HIC_CONTACT_MATRIX_FILE.value,new DNAregion(dna.subsequence.chromosome,dna.subsequence.start,dna.subsequence.end),binWidth,randomGenerator);
+		
+		}
+		else {
+			this.HIC_CONTACT_MATRIX= new InteractionMatrix(dna.subsequence,binWidth,randomGenerator);
+		}
+	}
 	
 	/**
 	 * either load them from a file or create them randomly
@@ -413,7 +465,7 @@ public class Cell implements Serializable {
 		// load TFs from file
 		TFfileParser TFparser = new TFfileParser(this, this.ip.TF_FILE.value, Utils.generateNextInteger(randomGenerator, this.ip.TF_COPY_NUMBER_MIN.value, this.ip.TF_COPY_NUMBER_MAX.value), this.ip.TF_ES.value, this.ip.TF_SIZE_LEFT.value, this.ip.TF_SIZE_RIGHT.value, this.ip.TF_ASSOC_RATE.value, this.dna.strand.length, this.ip.TF_UNBINDING_PROBABILITY.value, this.ip.TF_SLIDE_LEFT_PROBABILITY.value, this.ip.TF_SLIDE_RIGHT_PROBABILITY.value, this.ip.TF_JUMPING_PROBABILITY.value,
 				this.ip.TF_HOP_STD_DISPLACEMENT.value, this.ip.TF_SPECIFIC_WAITING_TIME.value, this.ip.TF_STEP_LEFT_SIZE.value, this.ip.TF_STEP_RIGHT_SIZE.value, this.ip.TF_UNCORRELATED_DISPLACEMENT_SIZE.value,
-				this.ip.TF_STALLS_IF_BLOCKED.value, this.ip.TF_COLLISION_UNBIND_PROBABILITY.value, this.ip.TF_AFFINITY_LANDSCAPE_ROUGHNESS.value, this.ip.TF_PREBOUND_PROPORTION.value, this.ip.TF_PREBOUND_TO_HIGHEST_AFFINITY.value, this.ip.TF_IS_IMMOBILE.value,dna.subsequence, this.ip.IS_BIASED_RANDOM_WALK.value,this.ip.IS_TWO_STATE_RANDOM_WALK.value);
+				this.ip.TF_STALLS_IF_BLOCKED.value, this.ip.TF_COLLISION_UNBIND_PROBABILITY.value, this.ip.TF_AFFINITY_LANDSCAPE_ROUGHNESS.value, this.ip.TF_PREBOUND_PROPORTION.value, this.ip.TF_PREBOUND_TO_HIGHEST_AFFINITY.value, this.ip.TF_IS_IMMOBILE.value,dna.subsequence, this.ip.IS_BIASED_RANDOM_WALK.value,this.ip.IS_TWO_STATE_RANDOM_WALK.value,this.ip.PK_MICROENV.value);
 		if(TFparser.parsed){
 			// load TF species
 			if(TFparser.data!=null && !TFparser.data.isEmpty()){
@@ -471,20 +523,22 @@ public class Cell implements Serializable {
 			if(this.ip.TF_COPY_NUMBER_MAX.value>0){
 				tsg = new TargetSitesAndGroups();
 				TFspecies = new TFspecies[size];
-				int dbdLength, copyNumber, step,pos;
+				int dbdLength, copyNumber, step,pos = 0;
 				step = dna.strand.length /(TFspecies.length+1);
 				int i=0;
 				while (i<TFspecies.length){
 					dbdLength = Utils.generateNextInteger(randomGenerator, this.ip.TF_DBD_LENGTH_MIN.value, this.ip.TF_DBD_LENGTH_MAX.value);
 					copyNumber = Utils.generateNextInteger(randomGenerator, this.ip.TF_COPY_NUMBER_MIN.value, this.ip.TF_COPY_NUMBER_MAX.value);
 					if(copyNumber > 0){
+
 						pos = step*(i+1);
 						TFspecies[i] = new TFspecies(i,dna.strand,pos, dbdLength, copyNumber,  this.ip.TF_ES.value, dna.subsequence, this.ip.TF_SIZE_LEFT.value, this.ip.TF_SIZE_RIGHT.value, this.ip.TF_ASSOC_RATE.value, new DNAregion("", 0, this.dna.strand.length), true, 
 								this.ip.TF_UNBINDING_PROBABILITY.value, this.ip.TF_SLIDE_LEFT_PROBABILITY.value, this.ip.TF_SLIDE_RIGHT_PROBABILITY.value, this.ip.TF_JUMPING_PROBABILITY.value,
 								this.ip.TF_HOP_STD_DISPLACEMENT.value, this.ip.TF_SPECIFIC_WAITING_TIME.value, this.ip.TF_STEP_LEFT_SIZE.value, this.ip.TF_STEP_RIGHT_SIZE.value, this.ip.TF_UNCORRELATED_DISPLACEMENT_SIZE.value,
-								this.ip.TF_STALLS_IF_BLOCKED.value, this.ip.TF_COLLISION_UNBIND_PROBABILITY.value, this.ip.TF_AFFINITY_LANDSCAPE_ROUGHNESS.value, this.ip.TF_PREBOUND_PROPORTION.value, this.ip.TF_PREBOUND_TO_HIGHEST_AFFINITY.value, this.ip.TF_IS_IMMOBILE.value, this.TFreadingDirection, this.ip.IS_BIASED_RANDOM_WALK.value, this.ip.IS_TWO_STATE_RANDOM_WALK.value);
+								this.ip.TF_STALLS_IF_BLOCKED.value, this.ip.TF_COLLISION_UNBIND_PROBABILITY.value, this.ip.TF_AFFINITY_LANDSCAPE_ROUGHNESS.value, this.ip.TF_PREBOUND_PROPORTION.value, this.ip.TF_PREBOUND_TO_HIGHEST_AFFINITY.value, this.ip.TF_IS_IMMOBILE.value, this.TFreadingDirection, this.ip.IS_BIASED_RANDOM_WALK.value, this.ip.IS_TWO_STATE_RANDOM_WALK.value,this.ip.PK_MICROENV.value);
 						moleculesCopyNumber+=TFspecies[i].copyNumber;
 						i++;
+						
 						tsg.addGroup(this, pos, i);
 					}
 					
@@ -497,7 +551,6 @@ public class Cell implements Serializable {
 		
 		//create the non-cognate TF species		
 	}
-	
 	/**
 	 * create all molecules TFs
 	 */
@@ -533,10 +586,8 @@ public class Cell implements Serializable {
 		int moleculesToBind, bound, newPosition;
 		int[] newLocation;
 		//prebind cognate TF 
-		System.out.println("before for loop");
-		
 		for(int i=0;i<TFspecies.length;i++){
-			System.out.println("prebound "+TFspecies[i].name+": "+TFspecies[i].preboundProportion +" ("+((int)Math.round(TFspecies[i].copyNumber*TFspecies[i].preboundProportion))+") "+" at highest "+TFspecies[i].preboundToHighestAffinity);
+			//System.out.println("prebound "+TFspecies[i].name+": "+TFspecies[i].preboundProportion +" ("+((int)Math.round(TFspecies[i].copyNumber*TFspecies[i].preboundProportion))+") "+" at highest "+TFspecies[i].preboundToHighestAffinity);
 
 			if(TFspecies[i].preboundProportion>0){
 				moleculesToBind = (int)Math.round(TFspecies[i].copyNumber*TFspecies[i].preboundProportion);
@@ -547,21 +598,15 @@ public class Cell implements Serializable {
 						for(int j=0;j<moleculesToBind && bound!=Constants.NONE;j++){
 							newLocation = this.getStrongestAvailableSite(i);
 							newPosition=newLocation[0];
-							
-							System.out.println("prebound "+TFspecies[i].name+" at "+newPosition+" in direction "+newLocation[1]+"; total length="+dna.occupied.length);
+							//System.out.println("prebound "+TFspecies[i].name+" at "+newPosition+" in direction"+newLocation[1]);
 							if(newPosition!=Constants.NONE){
 								bound = this.bindTFMoleculeToPosition(i, this.cellTime,newPosition,newLocation[1]);
-								System.out.println("INSIDE THE troubling if" +bound);
-								
-								//if(bound == Constants.NONE){moleculesToBind=moleculesToBind-1;}
 								if(bound!=Constants.NONE && !this.TFspecies[this.dbp[bound].speciesID].isImmobile){
 									eventQueue.scheduleNextTFRandomWalkEvent(this, bound, this.cellTime);
 								}
 							}
 						}	
 					} else{
-						//System.out.println("prebound random");
-
 						bound = 0;
 						for(int j=0;j<moleculesToBind && bound!=Constants.NONE;j++){
 							bound = this.bindTFMolecule(i, this.cellTime);
@@ -573,8 +618,9 @@ public class Cell implements Serializable {
 				}
 
 			} 
+			
 		}
-		System.out.println("bind molecules for loop");
+		
 		if(this.ip.SLIDING_AND_HOPPING_AFFECTS_TF_ASSOC_RATE.value){
 			this.eventQueue.TFBindingEventQueue.updateProteinBindingPropensities(Constants.NONE, this);
 		}
@@ -608,12 +654,10 @@ public class Cell implements Serializable {
 		
 		
 		if(this.freeTFmolecules.get(speciesID).size()>0 && dna.effectiveTFavailabilitySum[speciesID]>0){
-			
 			moleculeID=this.freeTFmolecules.get(speciesID).get(this.freeTFmolecules.get(speciesID).size()-1);
-			System.out.println("nucleosome");
 			while (bound==Constants.NONE && dna.effectiveTFavailabilitySum[speciesID]>0){
 				newPosition = getTFbindingPosition(moleculeID, speciesID);
-				bound = this.dbp[moleculeID].bindMolecule(this, time, newPosition);System.out.println("nucleosome the second");
+				bound = this.dbp[moleculeID].bindMolecule(this, time, newPosition);
 			}
 		}
 		return bound;
@@ -634,10 +678,8 @@ public class Cell implements Serializable {
 	
 		if(this.freeTFmolecules.get(speciesID).size()>0 && dna.effectiveTFavailabilitySum[speciesID]>0){
 			moleculeID=this.freeTFmolecules.get(speciesID).get(this.freeTFmolecules.get(speciesID).size()-1);
-			System.out.println("binding in if");
 			while (bound==Constants.NONE && dna.effectiveTFavailabilitySum[speciesID]>0){
 				bound = this.dbp[moleculeID].bindMolecule(this, time, newPosition, direction);
-				//System.out.println("binding in while");
 			}
 		}
 		return bound;
@@ -728,11 +770,16 @@ public class Cell implements Serializable {
 	
 	/**
 	 * generate TFs and DNA strand random
+	 * @throws Exception 
 	 */
-	private void generateObjects(){
+	private void generateObjects() throws Exception{
 	
 		//DNA
 		createDNAstrand();
+		
+		//Matrix
+		createInteractionMatrix();
+
 		
 		//TF species
 		createTFSpecies();
@@ -741,10 +788,12 @@ public class Cell implements Serializable {
 		dna.computeTFaffinityLandscape(this, this.randomGenerator, TFspecies, this.ip.COMPUTED_AFFINITY_PRECISION.value, this.ip.TF_SPECIFIC_WAITING_TIME.value,this.TFreadingDirection, this.ip.DNA_SECTOR_SIZE.value, this.ip.PRINT_FINAL_OCCUPANCY.value);
 		
 		createMolecules();
-		//System.out.println("created the molecules");
+		
 	}
 	
+
 	
+
 	/**
 	 * print init information to status file
 	 */
@@ -846,7 +895,8 @@ public class Cell implements Serializable {
 		this.printDebugInfo("the target site information was saved in file: "+ this.outputTargetSiteFile);
 
 		this.printDebugInfo("the TF information was saved in file: "+ this.outputTFFile);
-
+		
+		this.printDebugInfo("the Cumulative simulated matrix was saved in file: " +this.outputCumulativeSimulatedMatrix);
 		
 		if(this.areTFstoFollow){
 			for(int i: this.TFstoFollowID){
@@ -973,11 +1023,13 @@ public class Cell implements Serializable {
 		long curTime = System.currentTimeMillis();
 		double nextProcent=10;
 		double elapsedTimeSec = 0;
+		 
+		
 		
 		double doubleZero = Constants.DOUBLE_ZERO*this.totalStopTime;
 	
 		while ( (this.ip.STOP_TIME.value-cellTime >= doubleZero) && hasNextEvent){
-			
+		
 			//if no TF binding event is scheduled then schedule one
 			if(eventQueue.TFBindingEventQueue.isEmpty() && this.freeTFmoleculesTotal > 0 ){
 				eventQueue.scheduleNextTFBindingEvent(this, this.cellTime);
@@ -1086,16 +1138,19 @@ public class Cell implements Serializable {
 	private boolean executeNextEvent(boolean fixStopTime){
 		Event e;
 		ProteinEvent pe;
+		SimulationEvent se;
 		boolean result=true;
 		int proteinID;
-
+		
 		
 		
 		//if no TF binding event is scheduled then schedule one
 		if(eventQueue.TFBindingEventQueue.isEmpty() && this.freeTFmoleculesTotal > 0 ){
 			eventQueue.scheduleNextTFBindingEvent(this, this.cellTime);
 		}
-
+		if(eventQueue.SimulationEventQueue.isEmpty()) {
+			eventQueue.scheduleNextSimulationEvent(this, this.cellTime);
+		}
 			
 		e=null;
 		e=eventQueue.getNextEvent();
@@ -1103,6 +1158,7 @@ public class Cell implements Serializable {
 		if(e != null){
 			
 			eventsCount++;
+			
 			// there is at least one event in the queue
 			if(e instanceof ProteinEvent){
 				// next event is a ribosome event
@@ -1126,8 +1182,25 @@ public class Cell implements Serializable {
 				if(!this.TFspecies[this.dbp[pe.proteinID].speciesID].isImmobile){
 					this.eventQueue.scheduleNextTFRandomWalkEvent(this, pe.proteinID, e.time);
 				}
-	
-			} 		
+				
+				//checks if the event is a simulation event
+			} else if(e instanceof SimulationEvent) {
+				se=(SimulationEvent)e;
+				// if the cell time is as the event time then the matrix is simulated again
+				if(!fixStopTime || se.time <= this.totalStopTime){
+					this.HIC_CONTACT_MATRIX.addValueToCumulativeSimulatedMatrix(se.time);
+					this.HIC_CONTACT_MATRIX.simulateMatrix(this.randomGenerator, this.cellTime);
+					this.eventQueue.scheduleNextSimulationEvent(this, se.time);		
+					this.cellTime=se.time;
+
+					printDebugInfo("hm... no more simulation events at time "+(this.cellTime+this.totalSimulatedTime)+"!"+"last simulation event time: "+se.time);
+					
+				} else if(fixStopTime && e.time > this.totalStopTime){				
+					this.cellTime= this.totalStopTime;	
+					this.HIC_CONTACT_MATRIX.addValueToCumulativeSimulatedMatrix(this.totalStopTime);
+				}
+								
+			}
 		} else{
 			if(!canTFMoleculeBind()){
 				printDebugInfo("hm... no more events at time "+(this.cellTime+this.totalSimulatedTime)+"!");
@@ -1298,7 +1371,7 @@ public class Cell implements Serializable {
 
 			printTFspecies(time,false,filename);
 			
-			
+			saveCumulativeMatrix(this.outputCumulativeSimulatedMatrix);
 			
 			
 		} catch(Exception e){
@@ -1356,12 +1429,6 @@ public class Cell implements Serializable {
 	public int getNoOfDBPspecies(){
 		return this.TFspecies.length;
 	}
-	
-	
-	
-	
-	
-	
 
 	/**
 	 * prints target site information
@@ -1508,14 +1575,14 @@ public class Cell implements Serializable {
 
 
 	
-	/**
+		/**
 	   * Always treat de-serialization as a full-blown constructor, by
 	   * validating the final state of the de-serialized object.
 	   */
 	   private void readObject( ObjectInputStream in ) throws ClassNotFoundException, IOException {
 	     //always perform the default de-serialization first
 	     in.defaultReadObject();
-	  }
+	   }
 
 	    /**
 	    * This is the default implementation of writeObject.

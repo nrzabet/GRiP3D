@@ -1,5 +1,6 @@
 package event;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.PriorityQueue;
 
@@ -87,10 +88,27 @@ public class TFRandomWalkEventQueueFR  extends TFRandomWalkEventQueue{
 			int speciesID = n.dbp[moleculeID].speciesID;
 			int direction = n.dbp[moleculeID].getDirection();
 			boolean isHoppingEvent = false;
+			boolean hopping3D=false;
 			//compute the time the TF stays stucked 
 			double nextTime = Gillespie.computeNextReactionTime(n.dbp[moleculeID].getMoveRate(), n.randomGenerator);
 			double randomNumber=n.randomGenerator.nextDouble()*n.TFspecies[speciesID].slideRightNo;
 			
+			
+			int currentBin=0;
+			ArrayList<Integer> interactingBins=new ArrayList<Integer>();
+			int randomBinID=0;
+			if(position>0) {
+			currentBin= n.HIC_CONTACT_MATRIX.getCurrentBinIndex(position + (int) n.dna.subsequence.start, n.dna.subsequence.chromosome);
+			interactingBins.addAll(n.HIC_CONTACT_MATRIX.getInteractingBins(currentBin));
+			//draw a random bin from the collection of interacting bin		
+			
+			if(interactingBins.size()>0) {
+			// if this is reattaches to a different bin then newPosition = n.HIC_CONTACT_MATRIX.radomBinPosition(n.randomGenerator, randomBinID);
+			randomBinID = n.randomGenerator.nextInt(interactingBins.size());}
+			}
+			
+			//System.out.println(n.HIC_CONTACT_MATRIX.getBin(currentBin)+" and " + n.HIC_CONTACT_MATRIX.getBin(n.HIC_CONTACT_MATRIX.getBinSize()-1));
+			//System.out.println("this is the position: " + position +"\n" +" this is the bin: "+ currentBin);
 			
 			/*double slideLeftNo=n.TFspecies[speciesID].slideLeftNo, slideRightNo=n.TFspecies[speciesID].slideRightNo;
 			if(position>0 && position<n.dna.strand.length-1 && n.TFspecies[speciesID].isBiasedRandomWalk){
@@ -109,18 +127,22 @@ public class TFRandomWalkEventQueueFR  extends TFRandomWalkEventQueue{
 				isHoppingEvent = true;
 				nextAction = Constants.EVENT_TF_RANDOM_WALK_HOP;
 				newPosition  = Utils.generateNextNormalDistributedInteger(n.randomGenerator, position, n.TFspecies[speciesID].hopSTDdisplacement);
-			
+				
+
+					//newPosition  = Utils.generateNextNormalDistributedInteger(n.randomGenerator, position,n.TFspecies[speciesID].hopSTDdisplacement);
+
 					if(newPosition < 0){
 						//newPosition = 0;
 						nextAction = Constants.EVENT_TF_RANDOM_WALK_JUMP;
 						newPosition = Constants.NONE;
 						n.TFspecies[speciesID].countTFHopsOutside++;
-					} else if( newPosition >= n.dna.strand.length-n.dbp[moleculeID].size){
+					}
+					else if( newPosition >= n.dna.strand.length-n.dbp[moleculeID].size){
 						//newPosition =  n.dna.strand.length-n.dbp[moleculeID].size;
 						nextAction = Constants.EVENT_TF_RANDOM_WALK_JUMP;
 						newPosition = Constants.NONE;
 						n.TFspecies[speciesID].countTFHopsOutside++;
-					} else if (Math.abs(newPosition-position) > n.TFspecies[speciesID].uncorrelatedDisplacementSize){
+					} else if (Math.abs(newPosition-position) > n.TFspecies[speciesID].uncorrelatedDisplacementSize && hopping3D==false){
 						//the hop size is to big and the hop becomes a jump 
 						nextAction = Constants.EVENT_TF_RANDOM_WALK_JUMP;
 						newPosition = Constants.NONE;
@@ -139,8 +161,28 @@ public class TFRandomWalkEventQueueFR  extends TFRandomWalkEventQueue{
 			} else if(randomNumber <  n.dna.TFSlideRightNo[speciesID][position][direction]){
 				nextAction = Constants.EVENT_TF_RANDOM_WALK_SLIDE_RIGHT;
 				newPosition= position+n.TFspecies[speciesID].stepRightSize;
-			}			
+			}	
+			if(nextAction==Constants.EVENT_TF_RANDOM_WALK_JUMP) {
+				//new random number
+				double randomNo=n.randomGenerator.nextDouble();
+				double pkValue=n.TFspecies[speciesID].PK_MICROENV;
+				
+				if(pkValue==-1) {
+					pkValue= n.ip.PK_MICROENV.value;
+				}
+				if(randomNo <= pkValue && interactingBins.size()>0 ) {
+				// if this is reattaches to a different bin then newPosition = n.HIC_CONTACT_MATRIX.radomBinPosition(n.randomGenerator, randomBinID);
+									// nextAction = Constants.EVENT_TF_3D_HOP
+					
+						if(currentBin!=randomBinID) { 
+							hopping3D=true;
+							newPosition = n.HIC_CONTACT_MATRIX.radomBinPosition(n.randomGenerator, randomBinID);
+							nextAction = Constants.EVENT_TF_3D_HOP;
+						} 
+				}
+			}		
 			
+						
 			ProteinEvent e = new ProteinEvent(time+nextTime, moleculeID, newPosition, true, nextAction, isHoppingEvent);
 			
 			
@@ -148,7 +190,7 @@ public class TFRandomWalkEventQueueFR  extends TFRandomWalkEventQueue{
 			
 
 			this.add(e);
-			
+		
 		}
 
 	}
