@@ -13,6 +13,6 @@ The application, uses in most cases less than 2GB of RAM, but we preallocate mor
 read manual/grip3D_manual.pdf for the manual and examples.
 
 
-manual - the manual
-src - the source code
-exec - the jar runnable file with examples of data to run the code
+- manual - the manual
+- src - the source code
+- exec - the jar runnable file with examples of data to run the code
